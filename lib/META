@@ -1,0 +1,12 @@
+# OASIS_START
+# DO NOT EDIT (digest: 5487f473a8cbe8779b447a84f435d87b)
+version = "0.1"
+description = "Interface to CouchDB"
+requires = "cohttp.lwt atdgen"
+archive(byte) = "couchdb.cma"
+archive(byte, plugin) = "couchdb.cma"
+archive(native) = "couchdb.cmxa"
+archive(native, plugin) = "couchdb.cmxs"
+exists_if = "couchdb.cma"
+# OASIS_STOP
+

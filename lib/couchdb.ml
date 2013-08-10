@@ -1,0 +1,143 @@
+module C = Cohttp
+module CB = Cohttp_lwt_body
+module CU = Cohttp_lwt_unix.Client
+
+let (>>=) = Lwt.bind
+let (|>) a b = b a
+
+module Opt = struct
+  let unopt = function None -> raise Not_found | Some v -> v
+  let default d = function None -> d | Some v -> v
+  let map f = function None -> None | Some v -> Some (f v)
+  let map_opt f = function None -> None | Some v -> f v
+end
+
+type json = Yojson.Basic.json
+
+type h = {
+  uri: Uri.t;
+}
+
+type status =
+  [ `Ok | `Created | `Accepted |
+    `Not_Modified | `Bad_Request |
+    `Unauthorized | `Forbidden |
+    `Not_Found | `Resource_Not_Allowed |
+    `Not_Acceptable | `Conflict |
+    `Precondition_Failed | `Bad_Content_Type |
+    `Requested_Range_Not_Satisfiable |
+    `Expectation_Failed | `Internal_Server_Error ]
+
+let code_of_status = function
+  | `Ok -> 200
+  | `Created -> 201
+  | `Accepted -> 202
+  | `Not_Modified -> 304
+  | `Bad_Request -> 400
+  | `Unauthorized -> 401
+  | `Forbidden -> 403
+  | `Not_Found -> 404
+  | `Resource_Not_Allowed -> 405
+  | `Not_Acceptable -> 406
+  | `Conflict -> 409
+  | `Precondition_Failed -> 412
+  | `Bad_Content_Type -> 415
+  | `Requested_Range_Not_Satisfiable -> 416
+  | `Expectation_Failed -> 417
+  | `Internal_Server_Error -> 500
+
+let status_of_code = function
+  | 200 -> `Ok
+  | 201 -> `Created
+  | 202 -> `Accepted
+  | 304 -> `Not_Modified
+  | 400 -> `Bad_Request
+  | 401 -> `Unauthorized
+  | 403 -> `Forbidden
+  | 404 -> `Not_Found
+  | 405 -> `Resource_Not_Allowed
+  | 406 -> `Not_Acceptable
+  | 409 -> `Conflict
+  | 412 -> `Precondition_Failed
+  | 415 -> `Bad_Content_Type
+  | 416 -> `Requested_Range_Not_Satisfiable
+  | 417 -> `Expectation_Failed
+  | 500 -> `Internal_Server_Error
+  | _ -> failwith "int_of_status_code"
+
+exception Error of status * string
+exception Connection_error
+
+let handle ?(uri="http://localhost:5984") () = { uri=Uri.of_string uri }
+
+let code_of_resp resp =
+  C.Response.status resp |> C.Code.code_of_status
+
+let string_list_of_json = function
+  | `List json ->
+    List.map
+      (function `String s -> s | _ -> failwith "string_list_of_json") json
+  | _ -> failwith "string_list_of_json"
+
+let call ?headers ?body h meth path =
+  let uri = Uri.with_path h.uri ("/" ^ path) in
+  CU.call ?headers ?body ~chunked:false meth uri >>= function
+  | Some (resp, body) ->
+    let code = code_of_resp resp in
+    if code >= 400 then
+      CB.string_of_body body >>= fun body ->
+      let ret = Types_j.error_of_string body in
+      Lwt.fail (Error (status_of_code code, ret.Types_j.reason))
+    else
+      CB.string_of_body body >>= fun bs -> Lwt.return ((status_of_code code), bs)
+  | None              -> Lwt.fail Connection_error
+
+module DB = struct
+  let info h db_name =
+    call h `GET db_name
+    >>= fun (code, bs) ->
+    Lwt.return (code, Types_j.db_info_of_string bs)
+
+  let create h db_name =
+    call h `PUT db_name
+    >>= fun (code, bs) ->
+    Lwt.return code
+
+  let delete h db_name =
+    call h `DELETE db_name
+    >>= fun (code, bs) ->
+    Lwt.return code
+end
+
+module Doc = struct
+  let add ?id h db_name doc_json =
+    (* CouchDB does not support documents that are not dicts *)
+    (match doc_json with
+     | `Assoc _ -> ()
+     | _ ->
+       raise (Invalid_argument "Document must be a JSON object"));
+    let doc_json = match id with
+      | None -> doc_json
+      | Some id ->
+        (match doc_json with
+         | `Assoc dict -> `Assoc (("_id", `String id)::dict)
+         | _ -> assert false) in
+    let body = Yojson.Basic.to_string doc_json in
+    let body = CB.body_of_string body |> Opt.unopt in
+    let headers = C.Header.init_with "Content-Type" "application/json" in
+    call ~headers ~body h `POST db_name
+    >>= fun (code, bs) ->
+    Lwt.return (code, Types_j.doc_info_of_string bs)
+end
+
+module Misc = struct
+  let srv_info h =
+    call h `GET ""
+    >>= fun (code, bs) ->
+    Lwt.return (code, Types_j.srv_info_of_string bs)
+
+  let list_dbs h =
+    call h `GET "_all_dbs"
+    >>= fun (code, bs) ->
+    Lwt.return (code, Yojson.Basic.from_string bs |> string_list_of_json)
+end

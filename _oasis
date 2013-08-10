@@ -1,0 +1,13 @@
+OASISFormat: 0.3
+Name: couchdb
+Version: 0.1
+Synopsis: Interface to CouchDB
+Authors: Vincent Bernardoff <vb@luminar.eu.org>
+License: ISC
+Plugins: META (0.3), DevFiles (0.3)
+BuildTools: ocamlbuild
+
+Library couchdb
+  Path: lib
+  Modules: Types_j, Couchdb
+  BuildDepends: cohttp.lwt, atdgen
