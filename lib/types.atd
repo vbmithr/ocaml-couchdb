@@ -1,14 +1,14 @@
 type vendor = {
   version: string;
   name: string;
-} <ocaml field_prefix="vendor">
+} <ocaml field_prefix="vendor_">
 
 type srv_info = {
   couchdb: string;
   uuid: string;
   version: string;
   vendor: vendor;
-} <ocaml field_prefix="srv_info">
+} <ocaml field_prefix="srv_info_">
 
 type status = {
   ok: bool;
@@ -36,4 +36,4 @@ type doc_info = {
   id: string;
   ok: bool;
   rev: string;
-} <ocaml field_prefix="doc">
+} <ocaml field_prefix="doc_info_">

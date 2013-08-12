@@ -2,15 +2,15 @@
 
 
 type vendor = {
-  vendorversion (*atd version *): string;
-  vendorname (*atd name *): string
+  vendor_version (*atd version *): string;
+  vendor_name (*atd name *): string
 }
 
 type srv_info = {
-  srv_infocouchdb (*atd couchdb *): string;
-  srv_infouuid (*atd uuid *): string;
-  srv_infoversion (*atd version *): string;
-  srv_infovendor (*atd vendor *): vendor
+  srv_info_couchdb (*atd couchdb *): string;
+  srv_info_uuid (*atd uuid *): string;
+  srv_info_version (*atd version *): string;
+  srv_info_vendor (*atd vendor *): vendor
 }
 
 type status = { ok: bool }
@@ -31,7 +31,7 @@ type db_info = {
 }
 
 type doc_info = {
-  docid (*atd id *): string;
-  docok (*atd ok *): bool;
-  docrev (*atd rev *): string
+  doc_info_id (*atd id *): string;
+  doc_info_ok (*atd ok *): bool;
+  doc_info_rev (*atd rev *): string
 }

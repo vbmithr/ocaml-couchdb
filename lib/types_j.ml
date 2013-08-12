@@ -2,15 +2,15 @@
 
 
 type vendor = Types_t.vendor = {
-  vendorversion (*atd version *): string;
-  vendorname (*atd name *): string
+  vendor_version (*atd version *): string;
+  vendor_name (*atd name *): string
 }
 
 type srv_info = Types_t.srv_info = {
-  srv_infocouchdb (*atd couchdb *): string;
-  srv_infouuid (*atd uuid *): string;
-  srv_infoversion (*atd version *): string;
-  srv_infovendor (*atd vendor *): vendor
+  srv_info_couchdb (*atd couchdb *): string;
+  srv_info_uuid (*atd uuid *): string;
+  srv_info_version (*atd version *): string;
+  srv_info_vendor (*atd vendor *): vendor
 }
 
 type status = Types_t.status = { ok: bool }
@@ -31,9 +31,9 @@ type db_info = Types_t.db_info = {
 }
 
 type doc_info = Types_t.doc_info = {
-  docid (*atd id *): string;
-  docok (*atd ok *): bool;
-  docrev (*atd rev *): string
+  doc_info_id (*atd id *): string;
+  doc_info_ok (*atd ok *): bool;
+  doc_info_rev (*atd rev *): string
 }
 
 let write_vendor = (
@@ -48,7 +48,7 @@ let write_vendor = (
     (
       Yojson.Safe.write_string
     )
-      ob x.vendorversion;
+      ob x.vendor_version;
     if !is_first then
       is_first := false
     else
@@ -57,7 +57,7 @@ let write_vendor = (
     (
       Yojson.Safe.write_string
     )
-      ob x.vendorname;
+      ob x.vendor_name;
     Bi_outbuf.add_char ob '}';
 )
 let string_of_vendor ?(len = 1024) x =
@@ -70,8 +70,8 @@ let read_vendor = (
     Yojson.Safe.read_lcurl p lb;
     let x =
       {
-        vendorversion = Obj.magic 0.0;
-        vendorname = Obj.magic 0.0;
+        vendor_version = Obj.magic 0.0;
+        vendor_name = Obj.magic 0.0;
       }
     in
     let bits0 = ref 0 in
@@ -202,7 +202,7 @@ let write_srv_info = (
     (
       Yojson.Safe.write_string
     )
-      ob x.srv_infocouchdb;
+      ob x.srv_info_couchdb;
     if !is_first then
       is_first := false
     else
@@ -211,7 +211,7 @@ let write_srv_info = (
     (
       Yojson.Safe.write_string
     )
-      ob x.srv_infouuid;
+      ob x.srv_info_uuid;
     if !is_first then
       is_first := false
     else
@@ -220,7 +220,7 @@ let write_srv_info = (
     (
       Yojson.Safe.write_string
     )
-      ob x.srv_infoversion;
+      ob x.srv_info_version;
     if !is_first then
       is_first := false
     else
@@ -229,7 +229,7 @@ let write_srv_info = (
     (
       write_vendor
     )
-      ob x.srv_infovendor;
+      ob x.srv_info_vendor;
     Bi_outbuf.add_char ob '}';
 )
 let string_of_srv_info ?(len = 1024) x =
@@ -242,10 +242,10 @@ let read_srv_info = (
     Yojson.Safe.read_lcurl p lb;
     let x =
       {
-        srv_infocouchdb = Obj.magic 0.0;
-        srv_infouuid = Obj.magic 0.0;
-        srv_infoversion = Obj.magic 0.0;
-        srv_infovendor = Obj.magic 0.0;
+        srv_info_couchdb = Obj.magic 0.0;
+        srv_info_uuid = Obj.magic 0.0;
+        srv_info_version = Obj.magic 0.0;
+        srv_info_vendor = Obj.magic 0.0;
       }
     in
     let bits0 = ref 0 in
@@ -1232,7 +1232,7 @@ let write_doc_info = (
     (
       Yojson.Safe.write_string
     )
-      ob x.docid;
+      ob x.doc_info_id;
     if !is_first then
       is_first := false
     else
@@ -1241,7 +1241,7 @@ let write_doc_info = (
     (
       Yojson.Safe.write_bool
     )
-      ob x.docok;
+      ob x.doc_info_ok;
     if !is_first then
       is_first := false
     else
@@ -1250,7 +1250,7 @@ let write_doc_info = (
     (
       Yojson.Safe.write_string
     )
-      ob x.docrev;
+      ob x.doc_info_rev;
     Bi_outbuf.add_char ob '}';
 )
 let string_of_doc_info ?(len = 1024) x =
@@ -1263,9 +1263,9 @@ let read_doc_info = (
     Yojson.Safe.read_lcurl p lb;
     let x =
       {
-        docid = Obj.magic 0.0;
-        docok = Obj.magic 0.0;
-        docrev = Obj.magic 0.0;
+        doc_info_id = Obj.magic 0.0;
+        doc_info_ok = Obj.magic 0.0;
+        doc_info_rev = Obj.magic 0.0;
       }
     in
     let bits0 = ref 0 in
