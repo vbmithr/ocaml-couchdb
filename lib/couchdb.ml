@@ -113,9 +113,10 @@ module Doc = struct
   let add ?id h db_name doc_json =
     (* CouchDB does not support documents that are not dicts *)
     (match doc_json with
-     | `Assoc _ -> ()
+     | `Assoc _ -> Lwt.return ()
      | _ ->
-       raise (Invalid_argument "Document must be a JSON object"));
+       Lwt.fail (Invalid_argument "Document must be a JSON object"))
+    >>= fun () ->
     let doc_json = match id with
       | None -> doc_json
       | Some id ->
@@ -123,9 +124,9 @@ module Doc = struct
          | `Assoc dict -> `Assoc (("_id", `String id)::dict)
          | _ -> assert false) in
     let body = Yojson.Basic.to_string doc_json in
-    let body = CB.body_of_string body |> Opt.unopt in
+    let body = CB.body_of_string body in
     let headers = C.Header.init_with "Content-Type" "application/json" in
-    call ~headers ~body h `POST db_name
+    call ~headers ?body h `POST db_name
     >>= fun (code, bs) ->
     Lwt.return (code, Types_j.doc_info_of_string bs)
 end
