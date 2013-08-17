@@ -13,6 +13,7 @@ module Opt = struct
 end
 
 type json = Yojson.Basic.json
+type body = Cohttp_lwt_body.t
 
 type h = {
   uri: Uri.t;
@@ -65,7 +66,8 @@ let status_of_code = function
   | 500 -> `Internal_Server_Error
   | _ -> failwith "int_of_status_code"
 
-exception Error of status * string
+type 'a reply = [ `Ok of status * 'a | `Error of status * string ]
+
 exception Connection_error
 
 let handle ?(uri="http://localhost:5984") () = { uri=Uri.of_string uri }
@@ -79,34 +81,31 @@ let string_list_of_json = function
       (function `String s -> s | _ -> failwith "string_list_of_json") json
   | _ -> failwith "string_list_of_json"
 
-let call ?headers ?body h meth path =
+let call ?headers ?body ?chunked h meth path =
   let uri = Uri.with_path h.uri ("/" ^ path) in
-  CU.call ?headers ?body ~chunked:false meth uri >>= function
+  CU.call ?headers ?body ?chunked meth uri >>= function
   | Some (resp, body) ->
     let code = code_of_resp resp in
     if code >= 400 then
-      CB.string_of_body body >>= fun body ->
-      let ret = Types_j.error_of_string body in
-      Lwt.fail (Error (status_of_code code, ret.Types_j.reason))
+      CB.string_of_body body >>= fun bs ->
+      let ret = Types_j.error_of_string bs in
+      Lwt.return (`Error (status_of_code code, ret.Types_j.reason))
     else
-      CB.string_of_body body >>= fun bs -> Lwt.return ((status_of_code code), bs)
-  | None              -> Lwt.fail Connection_error
+      Lwt.return (`Ok ((status_of_code code), body))
+  | None -> Lwt.fail Connection_error
+
+let transform_reply_body f = function
+  | `Ok (code, body) ->
+    CB.string_of_body body >>= fun bs -> Lwt.return (`Ok (code, f bs))
+  | `Error (code, reason) as e -> Lwt.return e
 
 module DB = struct
   let info h db_name =
     call h `GET db_name
-    >>= fun (code, bs) ->
-    Lwt.return (code, Types_j.db_info_of_string bs)
+    >>= fun r -> transform_reply_body Types_j.db_info_of_string r
 
-  let create h db_name =
-    call h `PUT db_name
-    >>= fun (code, bs) ->
-    Lwt.return code
-
-  let delete h db_name =
-    call h `DELETE db_name
-    >>= fun (code, bs) ->
-    Lwt.return code
+  let create h db_name = call h `PUT db_name
+  let delete h db_name = call h `DELETE db_name
 end
 
 module Doc = struct
@@ -127,18 +126,15 @@ module Doc = struct
     let body = CB.body_of_string body in
     let headers = C.Header.init_with "Content-Type" "application/json" in
     call ~headers ?body h `POST db_name
-    >>= fun (code, bs) ->
-    Lwt.return (code, Types_j.doc_info_of_string bs)
+    >>= fun r -> transform_reply_body Types_j.doc_info_of_string r
 end
 
 module Misc = struct
   let srv_info h =
     call h `GET ""
-    >>= fun (code, bs) ->
-    Lwt.return (code, Types_j.srv_info_of_string bs)
+    >>= fun r -> transform_reply_body Types_j.srv_info_of_string r
 
   let list_dbs h =
     call h `GET "_all_dbs"
-    >>= fun (code, bs) ->
-    Lwt.return (code, Yojson.Basic.from_string bs |> string_list_of_json)
+    >>= fun r -> transform_reply_body (fun bs -> Yojson.Basic.from_string bs |> string_list_of_json) r
 end
