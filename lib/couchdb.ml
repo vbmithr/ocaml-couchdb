@@ -68,9 +68,8 @@ let status_of_code = function
 
 type 'a reply = [ `Ok of status * 'a | `Error of status * string ]
 
+exception Connection_failure
 exception Bad_reply
-
-let handle ?(uri="http://localhost:5984") () = { uri=Uri.of_string uri }
 
 let code_of_resp resp =
   C.Response.status resp |> C.Code.code_of_status
@@ -81,8 +80,8 @@ let string_list_of_json = function
       (function `String s -> s | _ -> failwith "string_list_of_json") json
   | _ -> failwith "string_list_of_json"
 
-let call ?headers ?body ?chunked h meth path =
-  let uri = Uri.with_path h.uri ("/" ^ path) in
+let call ?headers ?body ?chunked uri meth path =
+  let uri = Uri.with_path uri ("/" ^ path) in
   CU.call ?headers ?body ?chunked meth uri >>=
   function
   | Some (resp, body) ->
@@ -100,13 +99,19 @@ let transform_reply_body f = function
     CB.string_of_body body >>= fun bs -> Lwt.return (`Ok (code, f bs))
   | `Error (code, reason) as e -> Lwt.return e
 
+let handle ?(uri="http://localhost:5984") () =
+  let uri_ = Uri.of_string uri in
+  Lwt.try_bind (fun () -> call uri_ `GET "")
+  (fun _ -> Lwt.return { uri=uri_ })
+  (fun exn -> Lwt.fail (Invalid_argument ("Cannot connect to " ^ uri)))
+
 module DB = struct
   let info h db_name =
-    call h `GET db_name
+    call h.uri `GET db_name
     >>= fun r -> transform_reply_body Types_j.db_info_of_string r
 
-  let create h db_name = call h `PUT db_name
-  let delete h db_name = call h `DELETE db_name
+  let create h db_name = call h.uri `PUT db_name
+  let delete h db_name = call h.uri `DELETE db_name
 end
 
 module Doc = struct
@@ -126,16 +131,16 @@ module Doc = struct
     let body = Yojson.Basic.to_string doc_json in
     let body = CB.body_of_string body in
     let headers = C.Header.init_with "Content-Type" "application/json" in
-    call ~headers ?body h `POST db_name
+    call ~headers ?body h.uri `POST db_name
     >>= fun r -> transform_reply_body Types_j.doc_info_of_string r
 end
 
 module Misc = struct
   let srv_info h =
-    call h `GET ""
+    call h.uri `GET ""
     >>= fun r -> transform_reply_body Types_j.srv_info_of_string r
 
   let list_dbs h =
-    call h `GET "_all_dbs"
+    call h.uri `GET "_all_dbs"
     >>= fun r -> transform_reply_body (fun bs -> Yojson.Basic.from_string bs |> string_list_of_json) r
 end
