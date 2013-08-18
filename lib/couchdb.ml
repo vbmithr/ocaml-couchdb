@@ -68,7 +68,7 @@ let status_of_code = function
 
 type 'a reply = [ `Ok of status * 'a | `Error of status * string ]
 
-exception Connection_error
+exception Bad_reply
 
 let handle ?(uri="http://localhost:5984") () = { uri=Uri.of_string uri }
 
@@ -83,16 +83,21 @@ let string_list_of_json = function
 
 let call ?headers ?body ?chunked h meth path =
   let uri = Uri.with_path h.uri ("/" ^ path) in
-  CU.call ?headers ?body ?chunked meth uri >>= function
-  | Some (resp, body) ->
-    let code = code_of_resp resp in
-    if code >= 400 then
-      CB.string_of_body body >>= fun bs ->
-      let ret = Types_j.error_of_string bs in
-      Lwt.return (`Error (status_of_code code, ret.Types_j.reason))
-    else
-      Lwt.return (`Ok ((status_of_code code), body))
-  | None -> Lwt.fail Connection_error
+  Lwt.try_bind
+    (fun () -> CU.call ?headers ?body ?chunked meth uri)
+    (function
+      | Some (resp, body) ->
+        let code = code_of_resp resp in
+        if code >= 400 then
+          CB.string_of_body body >>= fun bs ->
+          let ret = Types_j.error_of_string bs in
+          Lwt.return (`Error (status_of_code code, ret.Types_j.reason))
+        else
+          Lwt.return (`Ok ((status_of_code code), body))
+      | None -> Lwt.fail Bad_reply)
+    (fun exn ->
+       Printf.printf "Call to DB failed: %s\n%!" (Printexc.to_string exn);
+       Lwt.fail exn)
 
 let transform_reply_body f = function
   | `Ok (code, body) ->

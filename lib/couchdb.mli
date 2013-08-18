@@ -24,7 +24,9 @@ type 'a reply = [ `Ok of status * 'a | `Error of status * string ]
 
 (** Exceptions *)
 
-exception Connection_error
+exception Bad_reply
+(** Exception returned when the DB reply with a HTTP response
+    containing no body. This normally does not happen. *)
 
 val handle : ?uri:string -> unit -> h
 
