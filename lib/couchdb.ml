@@ -5,13 +5,6 @@ module CU = Cohttp_lwt_unix.Client
 let (>>=) = Lwt.bind
 let (|>) a b = b a
 
-module Opt = struct
-  let unopt = function None -> raise Not_found | Some v -> v
-  let default d = function None -> d | Some v -> v
-  let map f = function None -> None | Some v -> Some (f v)
-  let map_opt f = function None -> None | Some v -> f v
-end
-
 type json = Yojson.Basic.json
 type body = Cohttp_lwt_body.t
 
@@ -20,14 +13,23 @@ type h = {
 }
 
 type status =
-  [ `Ok | `Created | `Accepted |
-    `Not_Modified | `Bad_Request |
-    `Unauthorized | `Forbidden |
-    `Not_Found | `Resource_Not_Allowed |
-    `Not_Acceptable | `Conflict |
-    `Precondition_Failed | `Bad_Content_Type |
-    `Requested_Range_Not_Satisfiable |
-    `Expectation_Failed | `Internal_Server_Error ]
+    [ `Ok
+    | `Created
+    | `Accepted
+    | `Not_Modified
+    | `Bad_Request
+    | `Unauthorized
+    | `Forbidden
+    | `Not_Found
+    | `Resource_Not_Allowed
+    | `Not_Acceptable
+    | `Conflict
+    | `Precondition_Failed
+    | `Bad_Content_Type
+    | `Requested_Range_Not_Satisfiable
+    | `Expectation_Failed
+    | `Internal_Server_Error
+    ]
 
 let code_of_status = function
   | `Ok -> 200
