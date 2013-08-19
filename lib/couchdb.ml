@@ -66,21 +66,15 @@ let status_of_code = function
   | 416 -> `Requested_Range_Not_Satisfiable
   | 417 -> `Expectation_Failed
   | 500 -> `Internal_Server_Error
-  | _ -> failwith "int_of_status_code"
+  | _ -> raise (Invalid_argument "Not a valid status code")
 
-type 'a reply = [ `Ok of status * 'a | `Error of status * string ]
+type 'a reply = [ `Success of status * 'a | `Failure of status * string ]
 
 exception Connection_failure
 exception Bad_reply
 
 let code_of_resp resp =
   C.Response.status resp |> C.Code.code_of_status
-
-let string_list_of_json = function
-  | `List json ->
-    List.map
-      (function `String s -> s | _ -> failwith "string_list_of_json") json
-  | _ -> failwith "string_list_of_json"
 
 let call ?headers ?body ?chunked uri meth path =
   let uri = Uri.with_path uri ("/" ^ path) in
@@ -91,15 +85,15 @@ let call ?headers ?body ?chunked uri meth path =
     if code >= 400 then
       CB.string_of_body body >>= fun bs ->
       let ret = Types_j.error_of_string bs in
-      Lwt.return (`Error (status_of_code code, ret.Types_j.reason))
+      Lwt.return (`Failure (status_of_code code, ret.Types_j.reason))
     else
-      Lwt.return (`Ok ((status_of_code code), body))
+      Lwt.return (`Success ((status_of_code code), body))
   | None -> Lwt.fail Bad_reply
 
 let transform_reply_body f = function
-  | `Ok (code, body) ->
-    CB.string_of_body body >>= fun bs -> Lwt.return (`Ok (code, f bs))
-  | `Error (code, reason) as e -> Lwt.return e
+  | `Success (code, body) ->
+    CB.string_of_body body >>= fun bs -> Lwt.return (`Success (code, f bs))
+  | `Failure (code, reason) as e -> Lwt.return e
 
 let handle ?(uri="http://localhost:5984") () =
   let uri_ = Uri.of_string uri in
@@ -144,5 +138,6 @@ module Misc = struct
 
   let list_dbs h =
     call h.uri `GET "_all_dbs"
-    >>= fun r -> transform_reply_body (fun bs -> Yojson.Basic.from_string bs |> string_list_of_json) r
+    >>= fun r -> transform_reply_body
+      Yojson.Basic.(fun bs -> from_string bs |> Util.to_list |> Util.filter_string) r
 end
