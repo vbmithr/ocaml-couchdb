@@ -51,7 +51,7 @@ end
 (** Document Methods *)
 
 module Doc : sig
-  val add : ?id:string -> h -> string -> json -> Types_t.doc_info reply Lwt.t
+  val add : h -> string -> json -> Types_t.doc_info reply Lwt.t
 end
 
 (** Miscellaneous Methods *)
