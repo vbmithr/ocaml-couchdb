@@ -27,6 +27,7 @@ type status =
 
 val status_of_code : int -> status
 val code_of_status : status -> int
+val string_of_status : status -> string
 
 type 'a reply = [ `Success of status * 'a | `Failure of status * string ]
 (** Type of a DB reply. *)

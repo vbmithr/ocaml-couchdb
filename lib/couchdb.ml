@@ -68,6 +68,24 @@ let status_of_code = function
   | 500 -> `Internal_Server_Error
   | _ -> raise (Invalid_argument "Not a valid status code")
 
+let string_of_status = function
+  | `Ok -> "OK"
+  | `Created -> "Created"
+  | `Accepted -> "Accepted"
+  | `Not_Modified -> "Not Modified"
+  | `Bad_Request -> "Bad Request"
+  | `Unauthorized -> "Unauthorized"
+  | `Forbidden -> "Forbidden"
+  | `Not_Found -> "Not Found"
+  | `Resource_Not_Allowed -> "Resource Not Allowed"
+  | `Not_Acceptable -> "Not Acceptable"
+  | `Conflict -> "Conflict"
+  | `Precondition_Failed -> "Precondition Failed"
+  | `Bad_Content_Type -> "Bad Content Type"
+  | `Requested_Range_Not_Satisfiable -> "Request Range Not Satisfiable"
+  | `Expectation_Failed -> "Expectation Failed"
+  | `Internal_Server_Error -> "Internal Server Error"
+
 type 'a reply = [ `Success of status * 'a | `Failure of status * string ]
 
 exception Connection_failure
