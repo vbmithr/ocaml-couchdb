@@ -10,4 +10,4 @@ BuildTools: ocamlbuild
 Library couchdb
   Path: lib
   Modules: Types_j, Couchdb
-  BuildDepends: cohttp.lwt, atdgen
+  BuildDepends: cohttp.lwt, atdgen, optcomp
