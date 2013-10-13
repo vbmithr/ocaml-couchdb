@@ -2,8 +2,12 @@ module C = Cohttp
 module CB = Cohttp_lwt_body
 module CU = Cohttp_lwt_unix.Client
 
+#if ocaml_version < (4, 1)
+let (@@) f x = f x
+let (|>) x f = f x
+#endif
+
 let (>>=) = Lwt.bind
-let (|>) a b = b a
 
 type json = Yojson.Basic.json
 type body = Cohttp_lwt_body.t
@@ -113,11 +117,10 @@ let transform_reply_body f = function
     CB.string_of_body body >>= fun bs -> Lwt.return (`Success (code, f bs))
   | `Failure (code, reason) as e -> Lwt.return e
 
-let handle ?(uri="http://localhost:5984") () =
-  let uri_ = Uri.of_string uri in
-  Lwt.try_bind (fun () -> call uri_ `GET "")
-  (fun _ -> Lwt.return { uri=uri_ })
-  (fun exn -> Lwt.fail (Invalid_argument ("Cannot connect to " ^ uri)))
+let handle ?(uri=Uri.of_string"http://localhost:5984") () =
+  Lwt.try_bind (fun () -> call uri `GET "")
+  (fun _ -> Lwt.return { uri })
+  (fun exn -> Lwt.fail (Invalid_argument ("Cannot connect to " ^ (Uri.to_string uri))))
 
 module DB = struct
   let info h db_name =

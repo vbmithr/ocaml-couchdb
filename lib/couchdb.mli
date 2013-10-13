@@ -38,7 +38,7 @@ exception Bad_reply
 (** Exception returned when the DB reply with a HTTP response
     containing no body. This normally does not happen. *)
 
-val handle : ?uri:string -> unit -> h Lwt.t
+val handle : ?uri:Uri.t -> unit -> h Lwt.t
 
 (** Database Methods *)
 
