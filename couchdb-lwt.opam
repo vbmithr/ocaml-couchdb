@@ -1,0 +1,22 @@
+opam-version: "1.2"
+name: "couchdb-lwt"
+version: "1.0"
+maintainer: "Vincent Bernardoff <vb@luminar.eu.org>"
+authors: ["Vincent Bernardoff <vb@luminar.eu.org>"]
+homepage: "https://github.com/vbmithr/ocaml-couchdb-lwt"
+doc: "https://vbmithr.github.io/ocaml-couchdb-lwt/doc"
+license: "ISC"
+dev-repo: "https://github.com/vbmithr/ocaml-couchdb-lwt.git"
+bug-reports: "https://github.com/vbmithr/ocaml-couchdb-lwt/issues"
+tags: []
+available: [ ocaml-version >= "4.03.0" ]
+depends: [
+  "ocamlfind" {build}
+  "ocamlbuild" {build}
+  "jbuilder" {build}
+  "lwt"
+  "cohttp"
+  "yojson"
+]
+depopts: []
+build: [ "jbuilder" "build" "@install" ]

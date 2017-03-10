@@ -1,0 +1,12 @@
+(library
+ ((name        couchdb)
+  (public_name couchdb)
+  (modules (couchdb))
+  (libraries (rresult ezjsonm ocplib-json-typed))))
+
+(library
+ ((name        couchdb_lwt)
+  (public_name couchdb-lwt)
+  (wrapped false)
+  (modules (couchdb_lwt))
+  (libraries (couchdb lwt cohttp ezjsonm))))

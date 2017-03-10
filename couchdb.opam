@@ -1,0 +1,19 @@
+opam-version: "1.2"
+name: "couchdb"
+version: "1.0"
+maintainer: "Vincent Bernardoff <vb@luminar.eu.org>"
+authors: ["Vincent Bernardoff <vb@luminar.eu.org>"]
+homepage: "https://github.com/vbmithr/ocaml-couchdb"
+doc: "https://vbmithr.github.io/ocaml-couchdb/doc"
+license: "ISC"
+dev-repo: "https://github.com/vbmithr/ocaml-couchdb.git"
+bug-reports: "https://github.com/vbmithr/ocaml-couchdb/issues"
+tags: []
+available: [ ocaml-version >= "4.03.0" ]
+depends: [
+  "ocamlfind" {build}
+  "ocamlbuild" {build}
+  "jbuilder" {build}
+]
+depopts: []
+build: [ "jbuilder" "build" "@install" ]
